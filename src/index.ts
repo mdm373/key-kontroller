@@ -37,6 +37,7 @@ const getInPoint = (device: Device): InpointResult => {
     }
 
     face.endpoints.forEach(endpoint => {
+      console.log(endpoint.direction)
       if(endpoint.direction !== "in" || claimed){
         return
       }
@@ -44,10 +45,12 @@ const getInPoint = (device: Device): InpointResult => {
       face.claim();
       claimed = face
       inPoint = endpoint as InEndpoint
-      return {claimed, inPoint}
     })
   })
-  throw 'could not locate device input'
+  if(!inPoint || !claimed){
+    throw 'could not locate device input'
+  }
+  return {claimed, inPoint}
 }
 
 const run = () => {
