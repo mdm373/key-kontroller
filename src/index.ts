@@ -1,34 +1,38 @@
-import {findByIds, InEndpoint, Interface} from 'usb'
+import {findByIds, InEndpoint, Interface, Device} from 'usb'
 
-const PROTO_KEYBOARD = 1
+const keyboardProtocol = 1
+const datOffset = 2;
 
-const run = () => {
+const getDevice = (): Device => {
   const deviceId = process.env.DEVICE_ID
   if(!deviceId){
-    console.error("specify DEVICE_ID in .env")
-    return
+    throw 'specify DEVICE_ID in .env'
   }
   
   const parts = deviceId.split('-')
   if(parts.length != 2){
-    console.error('invalid device id. expected "vendorId-productId" hex values')
-    return
+    throw 'invalid device id. expected "vendorId-productId" hex values'
   }
 
   const vendorId = Number.parseInt(parts[0], 16);
   const productId = Number.parseInt(parts[1], 16);
   const device = findByIds(vendorId, productId)
   if(!device){
-    console.error(`could not locate device ${deviceId}`)
-    return
+    throw `could not locate device`
   }
 
+  return device
+}
+
+interface InpointResult {
+ readonly claimed: Interface
+ readonly inPoint: InEndpoint
+}
+const getInPoint = (device: Device): InpointResult => {
   let claimed: Interface|undefined
   let inPoint: InEndpoint|undefined
-  
-  device.open()
   device.interfaces.forEach((face) => {
-    if(face.descriptor.bInterfaceProtocol !== PROTO_KEYBOARD){
+    if(face.descriptor.bInterfaceProtocol !== keyboardProtocol){
       return
     }
 
@@ -40,24 +44,32 @@ const run = () => {
       face.claim();
       claimed = face
       inPoint = endpoint as InEndpoint
+      return {claimed, inPoint}
     })
   })
-  if(!inPoint || !claimed){
-    console.error('could not locate device input')
-    device.close()
-    return
-  }
+  throw 'could not locate device input'
+}
 
+const run = () => {
+  const device = getDevice()
+  device.open()
+  
+  const inPointResult = getInPoint(device)
+  const inPoint = inPointResult.inPoint
+  const packetSize = inPoint.descriptor.wMaxPacketSize
   inPoint.on('data', (data: Buffer) => {
+    if(data.length !== packetSize || data.length < datOffset) {
+      console.error(`invalid packet size: ${data.length}`)
+      return
+    }
+    for(let i = datOffset; i < packetSize; i++){
+       
+    }
     console.log(data.length)
     console.log(data)
   })
-  console.log(claimed.descriptor)
-  console.log(inPoint.descriptor)
-
   inPoint.startPoll(1, inPoint.descriptor.wMaxPacketSize)
   
 }
 
 run()
-
