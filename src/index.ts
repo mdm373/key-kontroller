@@ -104,7 +104,10 @@ const run = () => {
         return
       }
       binding.split(" ").forEach(key => {
-        const moded = key.split("+")
+        const moded = key.split("+").map(mod => {
+          mod = mod.toLowerCase()
+          return mod === 'ctrl' ? 'control' : mod
+        })
         if(moded.length === 1) {
           keyTap(moded[0])
           return
