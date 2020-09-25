@@ -43,10 +43,9 @@ Update `DEVICE_ID` in `.env` with identified usb id
 Update bindings.json with macros as desired.
 
 > Syntax
-> * Keys seperated with single space (IE: h e l l o  w o r l d)
+> * Keys seperated with single space (IE: ctrl+c y enter)
 > * Modifiers prefixed with `+` symbol (IE: alt+f4)
-> * See [robotjs](https://robotjs.io/docs/syntax#keys) for key modifiers 
-> syntax.
+> * See [robotjs](https://robotjs.io/docs/syntax#keys) for key modifiers syntax
 
 ```cmd
 npm run app
