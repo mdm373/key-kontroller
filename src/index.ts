@@ -1,7 +1,21 @@
 import {findByIds, InEndpoint, Interface, Device} from 'usb'
+import { StringSet, excludeFromSet } from './string-set';
+import {typeString, keyTap} from 'robotjs'
+
+
+//TODO: Change to fs read from cwd for release
+const bindings: {readonly [key: string]: string} = require('../../bindings.json')
+const actionCodeMap: {readonly [key: string]: string} = require('../../action-codes.json')
 
 const keyboardProtocol = 1
 const datOffset = 2;
+
+const actionByteMap :{readonly [key: number]: string} = Object.keys(
+  actionCodeMap
+).reduce((agg, current) => {
+  agg[Number.parseInt(current, 16)] = actionCodeMap[current]
+  return agg
+}, {} as {[key: number]: string})
 
 const getDevice = (): Device => {
   const deviceId = process.env.DEVICE_ID
@@ -37,7 +51,6 @@ const getInPoint = (device: Device): InpointResult => {
     }
 
     face.endpoints.forEach(endpoint => {
-      console.log(endpoint.direction)
       if(endpoint.direction !== "in" || claimed){
         return
       }
@@ -54,6 +67,7 @@ const getInPoint = (device: Device): InpointResult => {
 }
 
 const run = () => {
+  let keyState: StringSet = {}
   const device = getDevice()
   device.open()
   
@@ -65,14 +79,46 @@ const run = () => {
       console.error(`invalid packet size: ${data.length}`)
       return
     }
+    const newState: StringSet = {}
     for(let i = datOffset; i < packetSize; i++){
-       
+      const code = data[i]
+       if (!code) {
+         break
+       }
+       const key = actionByteMap[code]
+       if (key == undefined) {
+         continue
+       }
+       newState[key] = true
     }
-    console.log(data.length)
-    console.log(data)
+    const oldState = keyState
+    keyState = newState
+
+    if(!oldState){
+      return
+    }
+    const released = excludeFromSet(oldState, newState)
+    Object.keys(released).forEach(key => {
+      const binding = bindings[key]
+      if(!binding){
+        return
+      }
+      binding.split(" ").forEach(key => {
+        const moded = key.split("+")
+        if(moded.length <= 1) {
+          keyTap(moded[0])
+          return
+        }
+        if(moded.length > 1) {
+          console.log(moded[moded.length-1],  moded.slice(0, moded.length-1))
+          keyTap(moded[moded.length-1],  moded.slice(0, moded.length-1))
+          return
+        }
+      })
+    })
   })
   inPoint.startPoll(1, inPoint.descriptor.wMaxPacketSize)
+  console.log("emulating keystrokes...")
   
 }
-
 run()

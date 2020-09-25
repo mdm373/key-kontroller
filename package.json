@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "install": "cp -n .env.shadow .env || copy .env.shadow .env || true",
+    "coppy:env": "cp -n .env.shadow .env || copy .env.shadow .env || true",
+    "copy:bindings": "cp -n bindings.json.shadow bindings.json || copy bindings.json.shadow bindings.json || true",
+    "install": "run-s copy:*",
     "dev": "tsc -w",
     "build": "tsc",
     "app": "dotenv -- node .dist/tsc/index.js",
@@ -22,10 +24,12 @@
   "homepage": "https://github.com/mdm373/key-kontroller#readme",
   "devDependencies": {
     "dotenv-cli": "^4.0.0",
-    "typescript": "^4.0.3"
+    "npm-run-all": "^4.1.5",
+    "typescript": "^4.0.3",
+    "@types/usb": "^1.5.2"
   },
   "dependencies": {
-    "@types/usb": "^1.5.2",
+    "robotjs": "^0.6.0",
     "usb": "^1.6.3"
   }
 }

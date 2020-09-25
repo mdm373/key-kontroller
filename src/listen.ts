@@ -1,11 +1,11 @@
-import {on, Device, getDeviceList} from 'usb'
+import {Device, getDeviceList} from 'usb'
+import {StringSet, excludeFromSet} from './string-set'
 
-type DeviceMap = {[key:string]: boolean}
 
 const pollRate = parseInt(process.env.pollRate || '5000')
 console.log(`polling device status every ${pollRate}ms`)
 
-let deviceState: DeviceMap|undefined = undefined
+let deviceState: StringSet|undefined = undefined
 
 const getUsbId = (device: Device): string => {
   if (!device){
@@ -17,14 +17,8 @@ const getUsbId = (device: Device): string => {
   }
   return `${desc.idVendor.toString(16)}-${desc.idProduct.toString(16)}`
 }
-const aExclusiveOfB = (a: DeviceMap, b: DeviceMap): DeviceMap => Object.keys(a).reduce((agg, current) => {
-  if(!b[current]){
-    agg[current] = true
-  }
-  return agg
-}, {} as DeviceMap)
 
-const logDeltas = (desc: string, delta: DeviceMap) => {
+const logDeltas = (desc: string, delta: StringSet) => {
   if(Object.keys(delta).length <= 0){
     return
   }
@@ -35,15 +29,15 @@ const update = () => {
   const newDevices = getDeviceList().reduce((agg, device) => {
     agg[getUsbId(device)] = true
     return agg
-  }, {} as DeviceMap)
+  }, {} as StringSet)
   const oldDevices = deviceState
   deviceState = newDevices
   if (oldDevices == undefined) {
     return
   }
   
-  logDeltas("Dropped", aExclusiveOfB(oldDevices, newDevices))
-  logDeltas("Added", aExclusiveOfB(newDevices, oldDevices))
+  logDeltas("Dropped", excludeFromSet(oldDevices, newDevices))
+  logDeltas("Added", excludeFromSet(newDevices, oldDevices))
 }
 setInterval(update, pollRate)
 
