@@ -105,20 +105,16 @@ const run = () => {
       }
       binding.split(" ").forEach(key => {
         const moded = key.split("+")
-        if(moded.length <= 1) {
+        if(moded.length === 1) {
           keyTap(moded[0])
           return
         }
-        if(moded.length > 1) {
-          console.log(moded[moded.length-1],  moded.slice(0, moded.length-1))
-          keyTap(moded[moded.length-1],  moded.slice(0, moded.length-1))
-          return
-        }
+        keyTap(moded[moded.length-1],  moded.slice(0, moded.length-1))
       })
     })
   })
   inPoint.startPoll(1, inPoint.descriptor.wMaxPacketSize)
-  console.log("emulating keystrokes...")
+  console.log("simulating keystrokes with macros from bindings.json...")
   
 }
 run()
